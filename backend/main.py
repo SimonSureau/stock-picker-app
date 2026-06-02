@@ -11,7 +11,8 @@ app = FastAPI(title="Stock Picker API")
 # Allow your React frontend to talk to this backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173",
+        "https://stock-picker-app.vercel.app",  # add your Vercel URL here],
     allow_methods=["*"],
     allow_headers=["*"],
 )
