@@ -11,13 +11,9 @@ app = FastAPI(title="Stock Picker API")
 # Allow your React frontend to talk to this backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://stock-picker-app-chi.vercel.app",
-    ],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True,
 )
 
 # Route 1: Get a current stock quote
