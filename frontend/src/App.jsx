@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import Screener from "./Screener"
 import Backtest from "./Backtest"
 
-const API = "http://localhost:8000"
+const API = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 function ScoreBadge({ score }) {
   const color = score >= 70 ? "#4ade80" : score >= 50 ? "#f59e0b" : "#f87171"
