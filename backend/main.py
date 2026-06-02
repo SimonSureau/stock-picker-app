@@ -13,7 +13,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://stock-picker-app.vercel.app",
+        "https://stock-picker-app-chi.vercel.app",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
