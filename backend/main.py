@@ -106,7 +106,7 @@ def screen_stocks(tickers: list[str]):
 # Route 6: Run a backtest
 @app.post("/backtest")
 def backtest(tickers: list[str]):
-    years = [2020, 2021, 2022, 2023, 2024]
+    years = [2022, 2023, 2024]
     return run_backtest(tickers, years)
 # Route 7: Get sentiment for a stock
 @app.get("/sentiment/{ticker}")
