@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import yfinance as yf
 from scorer import calculate_score
+from backtester import run_backtest
+from sentiment import get_combined_sentiment
 
 # Create the app
 app = FastAPI(title="Stock Picker API")
@@ -101,3 +103,15 @@ def screen_stocks(tickers: list[str]):
     # Sort by score, highest first
     results.sort(key=lambda x: x["total_score"], reverse=True)
     return results
+# Route 6: Run a backtest
+@app.post("/backtest")
+def backtest(tickers: list[str]):
+    years = [2020, 2021, 2022, 2023, 2024]
+    return run_backtest(tickers, years)
+# Route 7: Get sentiment for a stock
+@app.get("/sentiment/{ticker}")
+def get_sentiment(ticker: str):
+    stock = yf.Ticker(ticker.upper())
+    info  = stock.info
+    company = info.get("longName", ticker)
+    return get_combined_sentiment(ticker.upper(), company)

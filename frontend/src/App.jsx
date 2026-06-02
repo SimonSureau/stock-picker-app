@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import Screener from "./Screener"
+import Backtest from "./Backtest"
 
 const API = "http://localhost:8000"
 
@@ -46,12 +47,13 @@ export default function App() {
     setLoading(true)
     setError("")
     try {
-      const [scoreRes, histRes] = await Promise.all([
+      const [scoreRes, histRes, sentRes] = await Promise.all([
         fetch(`${API}/score/${ticker}`).then(r => r.json()),
         fetch(`${API}/history/${ticker}`).then(r => r.json()),
+        fetch(`${API}/sentiment/${ticker}`).then(r => r.json()),
       ])
       if (scoreRes.detail) throw new Error(scoreRes.detail)
-      setData(scoreRes)
+      setData({ ...scoreRes, sentiment: sentRes })
       setHistory(histRes.prices)
     } catch(e) {
       setError("Ticker not found. Try AAPL, MSFT or TSLA.")
@@ -72,6 +74,10 @@ export default function App() {
         <button onClick={() => setTab("screener")}
           style={{ padding:"8px 18px", background: tab==="screener" ? "#4ade80" : "#111", border:"1px solid #333", borderRadius:6, color: tab==="screener" ? "#000" : "#aaa", cursor:"pointer", fontWeight:600 }}>
           Screener
+        </button>
+        <button onClick={() => setTab("backtest")}
+          style={{ padding:"8px 18px", background: tab==="backtest" ? "#818cf8" : "#111", border:"1px solid #333", borderRadius:6, color: tab==="backtest" ? "#fff" : "#aaa", cursor:"pointer", fontWeight:600 }}>
+          Backtest
         </button>
       </div>
 
@@ -110,6 +116,28 @@ export default function App() {
                 </div>
               </div>
 
+              {data.sentiment && (
+                <div style={{ marginTop:20, background:"#111", border:"1px solid #222", borderRadius:12, padding:16 }}>
+                  <p style={{ fontSize:12, color:"#555", marginBottom:10, fontWeight:600, textTransform:"uppercase" }}>
+                    Market Sentiment — {data.sentiment.news_count} news · {data.sentiment.yahoo_count} Yahoo Finance
+                  </p>
+                  <div style={{ fontSize:18, fontWeight:800, color: data.sentiment.label==="positive" ? "#4ade80" : data.sentiment.label==="negative" ? "#f87171" : "#888", marginBottom:12 }}>
+                    {data.sentiment.label === "positive" ? "😊 Positive" : data.sentiment.label === "negative" ? "😟 Negative" : "😐 Neutral"}
+                  </div>
+                  {data.sentiment.items.slice(0, 5).map((item, i) => (
+                    <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start", padding:"6px 0", borderBottom:"1px solid #1a1a1a", fontSize:12 }}>
+                      <span style={{ background: item.source==="Yahoo Finance" ? "rgba(255,69,0,0.15)" : "rgba(129,140,248,0.15)", color: item.source==="Yahoo Finance" ? "#fb923c" : "#818cf8", padding:"2px 7px", borderRadius:4, flexShrink:0, fontFamily:"monospace" }}>
+                        {item.source}
+                      </span>
+                      <span style={{ flex:1, color:"#888", lineHeight:1.4 }}>{item.text}</span>
+                      <span style={{ color: item.label==="positive" ? "#4ade80" : item.label==="negative" ? "#f87171" : "#555", fontWeight:600, flexShrink:0 }}>
+                        {item.score > 0 ? "+" : ""}{item.score}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <h3 style={{ marginTop:28, marginBottom:12, fontSize:15, color:"#999" }}>1-Year Price History</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={history}>
@@ -125,6 +153,7 @@ export default function App() {
       )}
 
       {tab === "screener" && <Screener />}
+      {tab === "backtest" && <Backtest />}
 
     </div>
   )
