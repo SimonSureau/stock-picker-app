@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts"
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000"
@@ -10,20 +10,58 @@ const PRESETS = {
 }
 
 export default function Backtest() {
-  const [input, setInput] = useState("")
-  const [result, setResult] = useState(null)
+  const [input,   setInput]   = useState("")
+  const [result,  setResult]  = useState(null)
   const [loading, setLoading] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const pollRef    = useRef(null)
+  const timerRef   = useRef(null)
+
+  // Clean up intervals if the component unmounts mid-run
+  useEffect(() => () => {
+    clearInterval(pollRef.current)
+    clearInterval(timerRef.current)
+  }, [])
 
   async function runBacktest(tickers) {
+    clearInterval(pollRef.current)
+    clearInterval(timerRef.current)
     setLoading(true)
     setResult(null)
-    const res = await fetch(`${API}/backtest`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(tickers)
-    })
-    setResult(await res.json())
-    setLoading(false)
+    setElapsed(0)
+
+    try {
+      // Fire the job — returns instantly with a job_id
+      const startRes = await fetch(`${API}/backtest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tickers)
+      })
+      const { job_id } = await startRes.json()
+
+      // Tick elapsed seconds so the user sees progress
+      timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000)
+
+      // Poll every 2 seconds until done
+      pollRef.current = setInterval(async () => {
+        try {
+          const res  = await fetch(`${API}/backtest/${job_id}`)
+          const data = await res.json()
+          if (data.status !== "running") {
+            clearInterval(pollRef.current)
+            clearInterval(timerRef.current)
+            if (data.status === "done") setResult(data)
+            setLoading(false)
+          }
+        } catch {
+          clearInterval(pollRef.current)
+          clearInterval(timerRef.current)
+          setLoading(false)
+        }
+      }, 2000)
+    } catch {
+      setLoading(false)
+    }
   }
 
   function handleRun() {
@@ -64,7 +102,7 @@ export default function Backtest() {
 
       {loading && (
         <div style={{ color:"#555", fontSize:13, padding:"20px 0" }}>
-          ⏳ Fetching 5 years of historical data... this takes about 30–60 seconds.
+          ⏳ Analysing historical data... {elapsed}s
         </div>
       )}
 

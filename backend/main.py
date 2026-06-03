@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import concurrent.futures
+import threading
+import uuid
 import yfinance as yf
 import time
 from scorer import calculate_score
@@ -138,11 +140,30 @@ def screen_stocks(tickers: list[str]):
     # Sort by score, highest first
     results.sort(key=lambda x: x["total_score"], reverse=True)
     return results
-# Route 6: Run a backtest
+# Route 6: Start a backtest job — returns immediately with a job_id
+_backtest_jobs: dict = {}
+
 @app.post("/backtest")
-def backtest(tickers: list[str]):
-    years = [2022, 2023, 2024]
-    return run_backtest(tickers, years)
+def start_backtest(tickers: list[str]):
+    job_id = str(uuid.uuid4())
+    _backtest_jobs[job_id] = {"status": "running"}
+
+    def worker():
+        try:
+            result = run_backtest(tickers, [2022, 2023, 2024])
+            _backtest_jobs[job_id] = {"status": "done", **result}
+        except Exception as e:
+            _backtest_jobs[job_id] = {"status": "error", "detail": str(e)}
+
+    threading.Thread(target=worker, daemon=True).start()
+    return {"job_id": job_id}
+
+@app.get("/backtest/{job_id}")
+def poll_backtest(job_id: str):
+    job = _backtest_jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
 # Route 7: Score an ETF, index fund, or mutual fund
 @app.get("/fund/{ticker}")
 def get_fund_score(ticker: str):
