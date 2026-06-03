@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import concurrent.futures
 import yfinance as yf
 import time
 from scorer import calculate_score
@@ -13,14 +14,18 @@ _sp500_cache: dict = {"data": None, "ts": 0.0}
 def get_sp500_benchmark() -> dict:
     if time.time() - _sp500_cache["ts"] < 3600 and _sp500_cache["data"]:
         return _sp500_cache["data"]
-    try:
-        spy_info = yf.Ticker("SPY").info
-        _sp500_cache["data"] = {
-            "52wk_change": spy_info.get("52WeekChange"),
-            "3yr_return":  spy_info.get("threeYearAverageReturn"),
-        }
-    except Exception:
-        _sp500_cache["data"] = {"52wk_change": None, "3yr_return": None}
+    # Hard 8-second timeout — a slow or blocked Yahoo Finance response
+    # must never hang a user request.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        future = ex.submit(lambda: yf.Ticker("SPY").info)
+        try:
+            spy_info = future.result(timeout=8)
+            _sp500_cache["data"] = {
+                "52wk_change": spy_info.get("52WeekChange"),
+                "3yr_return":  spy_info.get("threeYearAverageReturn"),
+            }
+        except Exception:
+            _sp500_cache["data"] = {"52wk_change": None, "3yr_return": None}
     _sp500_cache["ts"] = time.time()
     return _sp500_cache["data"]
 
@@ -34,6 +39,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health check — no yfinance, instant response
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 # Route 1: Get a current stock quote
 @app.get("/quote/{ticker}")
