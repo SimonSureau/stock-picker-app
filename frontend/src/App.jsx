@@ -113,6 +113,8 @@ export default function App() {
                   <ScoreBar label="Profit Margin"  {...data.breakdown.profit_margin}  />
                   <ScoreBar label="Revenue Growth" {...data.breakdown.revenue_growth} />
                   <ScoreBar label="Debt/Equity"    {...data.breakdown.debt_to_equity} />
+                  <ScoreBar label="Dividend Yield" {...data.breakdown.dividend_yield} />
+                  <ScoreBar label="Payout Ratio"   {...data.breakdown.payout_ratio}   />
                 </div>
               </div>
 
