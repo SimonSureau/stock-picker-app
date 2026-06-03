@@ -170,7 +170,64 @@ def get_fund_score(ticker: str):
         **score_data
     }
 
-# Route 8: Get sentiment for a stock
+# Route 8: Goal-based recommendations
+_GOAL_TICKERS = {
+    "growth":         ["NVDA", "META", "GOOGL", "AMZN", "MSFT", "TSLA", "AVGO", "CRM", "QQQ", "VUG"],
+    "passive_income": ["KO",   "PEP",  "JNJ",   "PG",   "ABBV", "O",    "VZ",   "SCHD", "VYM", "JEPI"],
+    "balanced":       ["AAPL", "MSFT", "JPM",   "JNJ",  "V",    "PG",   "VOO",  "VTI",  "SCHD"],
+}
+
+@app.get("/recommend")
+def recommend(goal: str, amount: float):
+    tickers = _GOAL_TICKERS.get(goal)
+    if not tickers:
+        raise HTTPException(status_code=400, detail="Unknown goal. Use: growth, passive_income, balanced")
+
+    sp500 = get_sp500_benchmark()
+    results = []
+
+    for ticker in tickers:
+        try:
+            info = yf.Ticker(ticker).info
+            quote_type = info.get("quoteType", "")
+            is_fund = quote_type in ("ETF", "MUTUALFUND")
+
+            if is_fund:
+                price = info.get("navPrice") or info.get("regularMarketPrice")
+                if not price:
+                    continue
+                score_data = calculate_fund_score(info, sp500_3yr=sp500["3yr_return"])
+                category = info.get("category") or "ETF"
+            else:
+                price = info.get("currentPrice")
+                if not price:
+                    continue
+                score_data = calculate_score(info, sp500_52wk=sp500["52wk_change"])
+                category = info.get("sector") or "Stock"
+
+            results.append({
+                "ticker":      ticker,
+                "name":        info.get("longName", ticker),
+                "category":    category,
+                "price":       price,
+                "type":        "ETF" if is_fund else "Stock",
+                "total_score": score_data["total_score"],
+            })
+        except Exception:
+            pass
+
+    results.sort(key=lambda x: x["total_score"], reverse=True)
+    top = results[:5]
+
+    if top:
+        total_score = sum(r["total_score"] for r in top)
+        for r in top:
+            r["allocation"] = round(amount * r["total_score"] / total_score, 2)
+            r["shares"]     = max(0, int(r["allocation"] / r["price"])) if r["price"] > 0 else 0
+
+    return {"goal": goal, "amount": amount, "recommendations": top}
+
+# Route 9: Get sentiment for a stock
 @app.get("/sentiment/{ticker}")
 def get_sentiment(ticker: str):
     stock = yf.Ticker(ticker.upper())

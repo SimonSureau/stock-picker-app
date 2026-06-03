@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import Screener from "./Screener"
 import Backtest from "./Backtest"
 import FundSearch from "./FundSearch"
+import Goals from "./Goals"
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -35,13 +36,51 @@ function ScoreBar({ label, score, value, weight }) {
   )
 }
 
+function Landing({ onSelect }) {
+  return (
+    <div style={{ textAlign: "center", paddingTop: 60 }}>
+      <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 8 }}>📈 Stock Picker</h1>
+      <p style={{ color: "#555", fontSize: 15, marginBottom: 48 }}>AI-powered investment analysis</p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, maxWidth: 560, margin: "0 auto" }}>
+        <div onClick={() => onSelect("search")} style={{
+          background: "#111", border: "1px solid #222", borderRadius: 16,
+          padding: "36px 24px", cursor: "pointer", transition: "border-color 0.2s",
+        }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = "#4ade80"}
+          onMouseLeave={e => e.currentTarget.style.borderColor = "#222"}>
+          <div style={{ fontSize: 44, marginBottom: 14 }}>🔍</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Search & Screen</div>
+          <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+            Score individual stocks, run screeners, backtests and fund analysis
+          </div>
+        </div>
+
+        <div onClick={() => onSelect("goals")} style={{
+          background: "#111", border: "1px solid #222", borderRadius: 16,
+          padding: "36px 24px", cursor: "pointer", transition: "border-color 0.2s",
+        }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = "#818cf8"}
+          onMouseLeave={e => e.currentTarget.style.borderColor = "#222"}>
+          <div style={{ fontSize: 44, marginBottom: 14 }}>🎯</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Investment Goals</div>
+          <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+            Tell us your goals and budget — get personalised stock picks
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
-  const [ticker, setTicker] = useState("")
-  const [data, setData] = useState(null)
+  const [view,    setView]    = useState("landing")
+  const [ticker,  setTicker]  = useState("")
+  const [data,    setData]    = useState(null)
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [tab, setTab] = useState("search")
+  const [error,   setError]   = useState("")
+  const [tab,     setTab]     = useState("search")
 
   async function search() {
     if (!ticker) return
@@ -64,9 +103,25 @@ export default function App() {
 
   return (
     <div style={{ maxWidth:760, margin:"40px auto", padding:"0 20px", fontFamily:"sans-serif", background:"#0a0a0a", minHeight:"100vh", color:"#fff" }}>
-      <h1 style={{ fontSize:28, fontWeight:800, marginBottom:8 }}>📈 Stock Picker</h1>
-      <p style={{ color:"#666", marginBottom:16, fontSize:14 }}>AI-powered stock scoring using financial fundamentals</p>
 
+      {/* Back button — shown in search or goals mode */}
+      {view !== "landing" && (
+        <button onClick={() => setView("landing")} style={{
+          background: "none", border: "none", color: "#555", cursor: "pointer",
+          fontSize: 13, padding: "0 0 20px 0", display: "flex", alignItems: "center", gap: 6,
+        }}>
+          ← Home
+        </button>
+      )}
+
+      {/* Landing page */}
+      {view === "landing" && <Landing onSelect={setView} />}
+
+      {/* Goals view */}
+      {view === "goals" && <Goals />}
+
+      {/* Search / Screener / Backtest / Funds view */}
+      {view === "search" && (<div>
       <div style={{ display:"flex", gap:8, marginBottom:24 }}>
         <button onClick={() => setTab("search")}
           style={{ padding:"8px 18px", background: tab==="search" ? "#4ade80" : "#111", border:"1px solid #333", borderRadius:6, color: tab==="search" ? "#000" : "#aaa", cursor:"pointer", fontWeight:600 }}>
@@ -181,6 +236,8 @@ export default function App() {
       {tab === "screener" && <Screener />}
       {tab === "backtest" && <Backtest />}
       {tab === "funds"    && <FundSearch />}
+
+      </div>)}
 
     </div>
   )
