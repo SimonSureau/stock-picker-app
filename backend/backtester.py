@@ -10,7 +10,7 @@ def _fetch_and_score(ticker: str):
         info = yf.Ticker(ticker).info
         if not info.get("currentPrice"):
             return None
-        return {"ticker": ticker, "score": calculate_score(info)["total_score"]}
+        return {"ticker": ticker, "score": float(calculate_score(info)["total_score"])}
     except:
         return None
 
@@ -22,7 +22,7 @@ def _year_return(close_df: pd.DataFrame, ticker: str, year: int):
         yr = s[s.index.year == year]
         if len(yr) < 10:
             return None
-        return round((yr.iloc[-1] - yr.iloc[0]) / yr.iloc[0] * 100, 2)
+        return round(float((yr.iloc[-1] - yr.iloc[0]) / yr.iloc[0] * 100), 2)
     except:
         return None
 
@@ -77,22 +77,23 @@ def run_backtest(tickers: list, years: list) -> dict:
         if not year_rets:
             continue
 
-        avg = round(sum(year_rets) / len(year_rets), 2)
+        avg = round(float(sum(year_rets)) / len(year_rets), 2)
+        sp500_ret_f = float(sp500_ret) if sp500_ret is not None else None
         results.append({
             "year":            year,
             "top_picks":       year_picks,
             "strategy_return": avg,
-            "sp500_return":    sp500_ret,
-            "outperformed":    avg > (sp500_ret or 0),
+            "sp500_return":    sp500_ret_f,
+            "outperformed":    avg > (sp500_ret_f or 0),
         })
         total_strategy += avg
-        total_sp500    += (sp500_ret or 0)
+        total_sp500    += (sp500_ret_f or 0)
         valid_years    += 1
 
     return {
         "years_tested":          valid_years,
-        "total_strategy_return": round(total_strategy, 2),
-        "total_sp500_return":    round(total_sp500, 2),
-        "outperformance":        round(total_strategy - total_sp500, 2),
+        "total_strategy_return": round(float(total_strategy), 2),
+        "total_sp500_return":    round(float(total_sp500), 2),
+        "outperformance":        round(float(total_strategy - total_sp500), 2),
         "yearly_results":        results,
     }
