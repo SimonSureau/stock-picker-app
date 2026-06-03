@@ -63,6 +63,10 @@ def get_financials(ticker: str):
         "debt_to_equity": info.get("debtToEquity"),
         "profit_margin": info.get("profitMargins"),
         "sector": info.get("sector"),
+        "dividend_yield": info.get("dividendYield") or info.get("trailingAnnualDividendYield"),
+        "dividend_rate": info.get("dividendRate"),
+        "payout_ratio": info.get("payoutRatio"),
+        "ex_dividend_date": info.get("exDividendDate"),
     }
 
 # Route 4: Score a single stock
