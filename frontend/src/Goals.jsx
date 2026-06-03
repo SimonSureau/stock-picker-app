@@ -9,6 +9,7 @@ const GOALS = [
     icon:        "🚀",
     description: "Stocks with the strongest growth potential and upward momentum",
     color:       "#4ade80",
+    darkText:    true,
   },
   {
     id:          "passive_income",
@@ -16,6 +17,7 @@ const GOALS = [
     icon:        "💰",
     description: "High-dividend stocks and ETFs that pay you regularly",
     color:       "#f59e0b",
+    darkText:    true,
   },
   {
     id:          "balanced",
@@ -23,6 +25,31 @@ const GOALS = [
     icon:        "⚖️",
     description: "A mix of stability, income and steady long-term growth",
     color:       "#818cf8",
+    darkText:    false,
+  },
+  {
+    id:          "value",
+    label:       "Value Investing",
+    icon:        "💎",
+    description: "Undervalued stocks with low P/E ratios and strong fundamentals",
+    color:       "#f97316",
+    darkText:    true,
+  },
+  {
+    id:          "international",
+    label:       "International",
+    icon:        "🌍",
+    description: "Top companies outside the U.S. — diversify your portfolio globally",
+    color:       "#38bdf8",
+    darkText:    true,
+  },
+  {
+    id:          "consumer_staples",
+    label:       "Consumer Staples",
+    icon:        "🛒",
+    description: "Everyday consumer goods companies with stable, defensive returns",
+    color:       "#a78bfa",
+    darkText:    false,
   },
 ]
 
@@ -69,7 +96,7 @@ export default function Goals() {
       </p>
 
       {/* Goal cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
         {GOALS.map(g => (
           <div key={g.id} onClick={() => setGoal(g.id)} style={{
             border:        `2px solid ${goal === g.id ? g.color : "#222"}`,
@@ -113,7 +140,7 @@ export default function Goals() {
             borderRadius:  8,
             fontWeight:    700,
             cursor:        !goal || !amount ? "not-allowed" : "pointer",
-            color:         goal === "passive_income" || goal === "balanced" ? "#fff" : "#000",
+            color:         selectedGoal?.darkText ? "#000" : "#fff",
             whiteSpace:    "nowrap",
           }}>
           {loading ? "Analysing..." : "Get Recommendations"}

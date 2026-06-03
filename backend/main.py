@@ -172,9 +172,12 @@ def get_fund_score(ticker: str):
 
 # Route 8: Goal-based recommendations
 _GOAL_TICKERS = {
-    "growth":         ["NVDA", "META", "GOOGL", "AMZN", "MSFT", "TSLA", "AVGO", "CRM", "QQQ", "VUG"],
-    "passive_income": ["KO",   "PEP",  "JNJ",   "PG",   "ABBV", "O",    "VZ",   "SCHD", "VYM", "JEPI"],
-    "balanced":       ["AAPL", "MSFT", "JPM",   "JNJ",  "V",    "PG",   "VOO",  "VTI",  "SCHD"],
+    "growth":           ["NVDA", "META",  "GOOGL", "AMZN", "MSFT", "TSLA", "AVGO", "CRM",  "QQQ",  "VUG" ],
+    "passive_income":   ["KO",   "PEP",   "JNJ",   "PG",   "ABBV", "O",    "VZ",   "SCHD", "VYM",  "JEPI"],
+    "balanced":         ["AAPL", "MSFT",  "JPM",   "JNJ",  "V",    "PG",   "VOO",  "VTI",  "SCHD"        ],
+    "value":            ["BRK-B","JPM",   "BAC",   "INTC", "PFE",  "C",    "WFC",  "CVS",  "VTV",  "IVE" ],
+    "international":    ["ASML", "NVO",   "TSM",   "TM",   "SONY", "SAP",  "UL",   "BTI",  "EFA",  "VEU" ],
+    "consumer_staples": ["KO",   "PEP",   "PG",    "WMT",  "COST", "MDLZ", "GIS",  "CL",   "VDC",  "XLP" ],
 }
 
 @app.get("/recommend")
