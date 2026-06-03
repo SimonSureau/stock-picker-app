@@ -1,17 +1,9 @@
-# backtester.py — parallel fetching for speed
+# backtester.py — bulk history download to stay within Railway's 30s timeout
 
 import yfinance as yf
 import concurrent.futures
+import pandas as pd
 from scorer import calculate_score
-
-def _get_annual_return(ticker: str, year: int) -> float:
-    try:
-        hist = yf.Ticker(ticker).history(start=f"{year}-01-01", end=f"{year}-12-31")
-        if hist.empty or len(hist) < 10:
-            return None
-        return round((hist["Close"].iloc[-1] - hist["Close"].iloc[0]) / hist["Close"].iloc[0] * 100, 2)
-    except:
-        return None
 
 def _fetch_and_score(ticker: str):
     try:
@@ -22,8 +14,20 @@ def _fetch_and_score(ticker: str):
     except:
         return None
 
+def _year_return(close_df: pd.DataFrame, ticker: str, year: int):
+    try:
+        if ticker not in close_df.columns:
+            return None
+        s  = close_df[ticker].dropna()
+        yr = s[s.index.year == year]
+        if len(yr) < 10:
+            return None
+        return round((yr.iloc[-1] - yr.iloc[0]) / yr.iloc[0] * 100, 2)
+    except:
+        return None
+
 def run_backtest(tickers: list, years: list) -> dict:
-    # Step 1 — score every ticker once in parallel (not once per year)
+    # 1. Score each ticker once in parallel (current fundamentals, same for all years)
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         scored = [r for r in ex.map(_fetch_and_score, tickers) if r]
 
@@ -34,25 +38,36 @@ def run_backtest(tickers: list, years: list) -> dict:
             "total_sp500_return": 0, "outperformance": 0, "yearly_results": []
         }
 
-    # Step 2 — fetch all annual returns in parallel (top 3 picks + SPY for every year)
-    tasks = [(s["ticker"], y) for s in top3 for y in years] + [("SPY", y) for y in years]
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
-        futures = {task: ex.submit(_get_annual_return, *task) for task in tasks}
-    returns_map = {task: fut.result() for task, fut in futures.items()}
+    # 2. Fetch ALL price history in ONE bulk request instead of N×M individual calls
+    dl_tickers = [s["ticker"] for s in top3] + ["SPY"]
+    start_date = f"{min(years)}-01-01"
+    end_date   = f"{max(years)}-12-31"
 
-    # Step 3 — compile year-by-year results
-    results = []
+    close = pd.DataFrame()
+    try:
+        raw = yf.download(dl_tickers, start=start_date, end=end_date,
+                          auto_adjust=True, progress=False)
+        # yfinance returns MultiIndex columns when multiple tickers are given
+        if isinstance(raw.columns, pd.MultiIndex):
+            close = raw["Close"]
+        else:
+            close = raw[["Close"]].rename(columns={"Close": dl_tickers[0]})
+    except Exception:
+        pass
+
+    # 3. Compile year-by-year results
+    results        = []
     total_strategy = 0
     total_sp500    = 0
     valid_years    = 0
 
     for year in years:
-        sp500_ret  = returns_map.get(("SPY", year))
+        sp500_ret  = _year_return(close, "SPY", year)
         year_picks = []
         year_rets  = []
 
         for stock in top3:
-            ret  = returns_map.get((stock["ticker"], year))
+            ret  = _year_return(close, stock["ticker"], year)
             pick = {"ticker": stock["ticker"], "score": stock["score"]}
             if ret is not None:
                 pick["return"] = ret
