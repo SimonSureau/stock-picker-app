@@ -110,6 +110,23 @@ export default function App() {
                   <h2 style={{ fontSize:22, fontWeight:800 }}>{data.name}</h2>
                   <p style={{ color:"#666", fontSize:13 }}>{data.ticker} · {data.sector} · ${data.price?.toFixed(2)}</p>
                   <ScoreBadge score={data.total_score} />
+                  {data.stock_52wk_return != null && (
+                    <div style={{ fontSize:12, color:"#555", marginTop:4 }}>
+                      1yr: <span style={{ color: data.stock_52wk_return >= 0 ? "#4ade80" : "#f87171" }}>
+                        {data.stock_52wk_return > 0 ? "+" : ""}{data.stock_52wk_return}%
+                      </span>
+                      {data.sp500_52wk_return != null && (
+                        <> vs S&P <span style={{ color:"#818cf8" }}>
+                          {data.sp500_52wk_return > 0 ? "+" : ""}{data.sp500_52wk_return}%
+                        </span>
+                        {data.alpha != null && (
+                          <span style={{ color: data.alpha >= 0 ? "#4ade80" : "#f87171", marginLeft:4 }}>
+                            ({data.alpha > 0 ? "+" : ""}{data.alpha}% alpha)
+                          </span>
+                        )}</>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ background:"#111", border:"1px solid #222", borderRadius:12, padding:16, minWidth:260 }}>
@@ -120,6 +137,8 @@ export default function App() {
                   <ScoreBar label="Debt/Equity"    {...data.breakdown.debt_to_equity} />
                   <ScoreBar label="Dividend Yield" {...data.breakdown.dividend_yield} />
                   <ScoreBar label="Payout Ratio"   {...data.breakdown.payout_ratio}   />
+                  <ScoreBar label="Beta"           {...data.breakdown.beta}           />
+                  <ScoreBar label="vs S&P 500"     {...data.breakdown.vs_sp500}       />
                 </div>
               </div>
 

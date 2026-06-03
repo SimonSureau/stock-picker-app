@@ -124,11 +124,30 @@ export default function FundSearch() {
               <p style={{ fontSize:12, color:"#555", marginBottom:12, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.06em" }}>Score Breakdown</p>
               <ScoreBar label="Expense Ratio"    {...data.breakdown.expense_ratio}     />
               <ScoreBar label="3-Year Return"    {...data.breakdown.three_year_return} />
+              <ScoreBar label="vs S&P 500"       {...data.breakdown.vs_sp500}          />
               <ScoreBar label="Total Assets"     {...data.breakdown.total_assets}      />
               <ScoreBar label="Beta"             {...data.breakdown.beta}              />
               <ScoreBar label="Dividend Yield"   {...data.breakdown.dividend_yield}    />
             </div>
           </div>
+
+          {data.fund_3yr_return != null && (
+            <div style={{ fontSize:12, color:"#555", marginTop:8 }}>
+              3yr annualised: <span style={{ color: data.fund_3yr_return >= 0 ? "#4ade80" : "#f87171" }}>
+                {data.fund_3yr_return > 0 ? "+" : ""}{data.fund_3yr_return}%
+              </span>
+              {data.sp500_3yr_return != null && (
+                <> vs S&P <span style={{ color:"#818cf8" }}>
+                  {data.sp500_3yr_return > 0 ? "+" : ""}{data.sp500_3yr_return}%
+                </span>
+                {data.alpha != null && (
+                  <span style={{ color: data.alpha >= 0 ? "#4ade80" : "#f87171", marginLeft:4 }}>
+                    ({data.alpha > 0 ? "+" : ""}{data.alpha}% alpha)
+                  </span>
+                )}</>
+              )}
+            </div>
+          )}
 
           <div style={{ marginTop:20, background:"#111", border:"1px solid #222", borderRadius:12, padding:16 }}>
             <p style={{ fontSize:12, color:"#555", marginBottom:12, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.06em" }}>Fund Stats</p>
@@ -136,6 +155,8 @@ export default function FundSearch() {
             <StatRow label="Total Assets (AUM)" value={fmt(data.total_assets, "aum")} />
             <StatRow label="Expense Ratio"      value={fmt(data.expense_ratio, "ratio")} />
             <StatRow label="3-Year Return"      value={fmt(data.three_year_return, "pct")} />
+            <StatRow label="S&P 500 3-Year"     value={data.sp500_3yr_return != null ? `${data.sp500_3yr_return > 0 ? "+" : ""}${data.sp500_3yr_return}%` : null} />
+            <StatRow label="Alpha (3yr)"        value={data.alpha != null ? `${data.alpha > 0 ? "+" : ""}${data.alpha}%` : null} />
             <StatRow label="5-Year Return"      value={fmt(data.five_year_return, "pct")} />
             <StatRow label="YTD Return"         value={fmt(data.ytd_return, "pct")} />
             <StatRow label="Dividend Yield"     value={fmt(data.dividend_yield, "pct")} />

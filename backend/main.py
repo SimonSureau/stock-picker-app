@@ -1,10 +1,28 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import yfinance as yf
+import time
 from scorer import calculate_score
 from fund_scorer import calculate_fund_score
 from backtester import run_backtest
 from sentiment import get_combined_sentiment
+
+# Cache SPY benchmark data for 1 hour to avoid fetching on every request
+_sp500_cache: dict = {"data": None, "ts": 0.0}
+
+def get_sp500_benchmark() -> dict:
+    if time.time() - _sp500_cache["ts"] < 3600 and _sp500_cache["data"]:
+        return _sp500_cache["data"]
+    try:
+        spy_info = yf.Ticker("SPY").info
+        _sp500_cache["data"] = {
+            "52wk_change": spy_info.get("52WeekChange"),
+            "3yr_return":  spy_info.get("threeYearAverageReturn"),
+        }
+    except Exception:
+        _sp500_cache["data"] = {"52wk_change": None, "3yr_return": None}
+    _sp500_cache["ts"] = time.time()
+    return _sp500_cache["data"]
 
 # Create the app
 app = FastAPI(title="Stock Picker API")
@@ -77,7 +95,8 @@ def get_score(ticker: str):
     info = stock.info
     if not info.get("currentPrice"):
         raise HTTPException(status_code=404, detail="Ticker not found")
-    score_data = calculate_score(info)
+    sp500 = get_sp500_benchmark()
+    score_data = calculate_score(info, sp500_52wk=sp500["52wk_change"])
     return {
         "ticker": ticker.upper(),
         "name": info.get("longName"),
@@ -89,13 +108,14 @@ def get_score(ticker: str):
 # Route 5: Screen multiple stocks at once
 @app.post("/screen")
 def screen_stocks(tickers: list[str]):
+    sp500 = get_sp500_benchmark()
     results = []
     for ticker in tickers[:10]:  # max 10 at a time
         try:
             stock = yf.Ticker(ticker.upper())
             info = stock.info
             if info.get("currentPrice"):
-                score_data = calculate_score(info)
+                score_data = calculate_score(info, sp500_52wk=sp500["52wk_change"])
                 results.append({
                     "ticker": ticker.upper(),
                     "name": info.get("longName"),
@@ -121,7 +141,8 @@ def get_fund_score(ticker: str):
     quote_type = info.get("quoteType", "")
     if not info.get("totalAssets") and not info.get("navPrice") and not info.get("regularMarketPrice"):
         raise HTTPException(status_code=404, detail="Fund not found")
-    score_data = calculate_fund_score(info)
+    sp500 = get_sp500_benchmark()
+    score_data = calculate_fund_score(info, sp500_3yr=sp500["3yr_return"])
     return {
         "ticker": ticker.upper(),
         "name": info.get("longName"),

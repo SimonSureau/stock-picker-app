@@ -80,7 +80,33 @@ def score_payout_ratio(ratio):
     if ratio > 0.30: return 100  # sweet spot
     return 70  # low payout — conservative but room to grow
 
-def calculate_score(info: dict) -> dict:
+def score_beta(beta):
+    """Beta near 1.0 = market-like risk. Very high or negative = elevated risk."""
+    if beta is None:
+        return 50
+    if beta < 0:     return 30
+    if beta < 0.5:   return 55
+    if beta < 0.8:   return 72
+    if beta < 1.2:   return 85
+    if beta < 1.5:   return 70
+    if beta < 2.0:   return 50
+    return 30
+
+def score_vs_sp500(stock_52wk, sp500_52wk):
+    """Score 1-year return relative to the S&P 500. Positive alpha = outperformance."""
+    if stock_52wk is None or sp500_52wk is None:
+        return 50
+    alpha = stock_52wk - sp500_52wk  # decimal, e.g. 0.08 = 8% better
+    if alpha > 0.20:   return 100
+    if alpha > 0.10:   return 85
+    if alpha > 0.05:   return 72
+    if alpha > 0:      return 60
+    if alpha > -0.05:  return 45
+    if alpha > -0.10:  return 30
+    if alpha > -0.20:  return 18
+    return 8
+
+def calculate_score(info: dict, sp500_52wk: float = None) -> dict:
     """
     Main scoring function.
     Takes a yfinance info dict, returns a score and breakdown.
@@ -91,33 +117,45 @@ def calculate_score(info: dict) -> dict:
     de           = info.get("debtToEquity")
     div_yield    = info.get("dividendYield") or info.get("trailingAnnualDividendYield")
     payout_ratio = info.get("payoutRatio")
+    beta         = info.get("beta")
+    stock_52wk   = info.get("52WeekChange")
 
-    # Score each metric individually
-    pe_score     = score_pe_ratio(pe)
-    margin_score = score_profit_margin(margin)
-    growth_score = score_revenue_growth(growth)
-    de_score     = score_debt_to_equity(de)
-    div_score    = score_dividend_yield(div_yield)
-    payout_score = score_payout_ratio(payout_ratio)
+    pe_score      = score_pe_ratio(pe)
+    margin_score  = score_profit_margin(margin)
+    growth_score  = score_revenue_growth(growth)
+    de_score      = score_debt_to_equity(de)
+    div_score     = score_dividend_yield(div_yield)
+    payout_score  = score_payout_ratio(payout_ratio)
+    beta_score    = score_beta(beta)
+    sp500_score   = score_vs_sp500(stock_52wk, sp500_52wk)
 
     # Weighted average (weights must add to 1.0)
     total = (
-        pe_score     * 0.25 +
-        margin_score * 0.20 +
-        growth_score * 0.20 +
-        de_score     * 0.15 +
-        div_score    * 0.12 +
-        payout_score * 0.08
+        pe_score    * 0.22 +
+        margin_score * 0.17 +
+        growth_score * 0.17 +
+        de_score     * 0.11 +
+        div_score    * 0.09 +
+        payout_score * 0.06 +
+        beta_score   * 0.09 +
+        sp500_score  * 0.09
     )
+
+    alpha = round((stock_52wk - sp500_52wk) * 100, 1) if stock_52wk is not None and sp500_52wk is not None else None
 
     return {
         "total_score": round(total, 1),
+        "stock_52wk_return": round(stock_52wk * 100, 1) if stock_52wk is not None else None,
+        "sp500_52wk_return": round(sp500_52wk * 100, 1) if sp500_52wk is not None else None,
+        "alpha": alpha,
         "breakdown": {
-            "pe_ratio":       {"score": pe_score,     "value": pe,           "weight": "25%"},
-            "profit_margin":  {"score": margin_score, "value": margin,       "weight": "20%"},
-            "revenue_growth": {"score": growth_score, "value": growth,       "weight": "20%"},
-            "debt_to_equity": {"score": de_score,     "value": de,           "weight": "15%"},
-            "dividend_yield": {"score": div_score,    "value": div_yield,    "weight": "12%"},
-            "payout_ratio":   {"score": payout_score, "value": payout_ratio, "weight": "8%"},
+            "pe_ratio":       {"score": pe_score,     "value": pe,           "weight": "22%"},
+            "profit_margin":  {"score": margin_score, "value": margin,       "weight": "17%"},
+            "revenue_growth": {"score": growth_score, "value": growth,       "weight": "17%"},
+            "debt_to_equity": {"score": de_score,     "value": de,           "weight": "11%"},
+            "dividend_yield": {"score": div_score,    "value": div_yield,    "weight": "9%"},
+            "payout_ratio":   {"score": payout_score, "value": payout_ratio, "weight": "6%"},
+            "beta":           {"score": beta_score,   "value": beta,         "weight": "9%"},
+            "vs_sp500":       {"score": sp500_score,  "value": alpha,        "weight": "9%"},
         }
     }
