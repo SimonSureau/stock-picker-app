@@ -94,7 +94,7 @@ export default function App() {
               onChange={e => setTicker(e.target.value.toUpperCase())}
               onKeyDown={e => e.key === "Enter" && search()}
               placeholder="Enter ticker (e.g. AAPL)"
-              style={{ flex:1, padding:"12px 16px", fontSize:16, background:"#111", border:"1px solid #333", borderRadius:8, color:"#fff" }}
+              style={{ flex:1, padding:"12px 16px", fontSize:16, background:"#111", border:"1px solid #333", borderRadius:8, color:"#fff", textTransform:"uppercase" }}
             />
             <button onClick={search} style={{ padding:"12px 28px", fontSize:15, background:"#4ade80", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer", color:"#000" }}>
               {loading ? "..." : "Score"}

@@ -54,8 +54,8 @@ export default function Backtest() {
       </div>
 
       <div style={{ display:"flex", gap:8, marginBottom:24 }}>
-        <input value={input} onChange={e => setInput(e.target.value)} placeholder="AAPL, MSFT, JPM, JNJ, PG"
-          style={{ flex:1, padding:"10px 14px", background:"#111", border:"1px solid #333", borderRadius:8, color:"#fff", fontSize:14 }} />
+        <input value={input} onChange={e => setInput(e.target.value.toUpperCase())} placeholder="AAPL, MSFT, JPM, JNJ, PG"
+          style={{ flex:1, padding:"10px 14px", background:"#111", border:"1px solid #333", borderRadius:8, color:"#fff", fontSize:14, textTransform:"uppercase" }} />
         <button onClick={handleRun}
           style={{ padding:"10px 22px", background:"#818cf8", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer", color:"#fff" }}>
           {loading ? "Running..." : "Run Backtest"}

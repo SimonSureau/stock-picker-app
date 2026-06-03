@@ -52,8 +52,8 @@ export default function Screener() {
       </div>
 
       <div style={{ display:"flex", gap:8, marginBottom:24 }}>
-        <input value={input} onChange={e => setInput(e.target.value)} placeholder="AAPL, MSFT, TSLA, GOOGL"
-          style={{ flex:1, padding:"10px 14px", background:"#111", border:"1px solid #333", borderRadius:8, color:"#fff", fontSize:14 }} />
+        <input value={input} onChange={e => setInput(e.target.value.toUpperCase())} placeholder="AAPL, MSFT, TSLA, GOOGL"
+          style={{ flex:1, padding:"10px 14px", background:"#111", border:"1px solid #333", borderRadius:8, color:"#fff", fontSize:14, textTransform:"uppercase" }} />
         <button onClick={handleSubmit} style={{ padding:"10px 22px", background:"#4ade80", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer", color:"#000" }}>
           {loading ? "Scoring..." : "Screen"}
         </button>
