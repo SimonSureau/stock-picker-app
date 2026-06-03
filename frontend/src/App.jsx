@@ -2,6 +2,7 @@ import { useState } from "react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import Screener from "./Screener"
 import Backtest from "./Backtest"
+import FundSearch from "./FundSearch"
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -78,6 +79,10 @@ export default function App() {
         <button onClick={() => setTab("backtest")}
           style={{ padding:"8px 18px", background: tab==="backtest" ? "#818cf8" : "#111", border:"1px solid #333", borderRadius:6, color: tab==="backtest" ? "#fff" : "#aaa", cursor:"pointer", fontWeight:600 }}>
           Backtest
+        </button>
+        <button onClick={() => setTab("funds")}
+          style={{ padding:"8px 18px", background: tab==="funds" ? "#38bdf8" : "#111", border:"1px solid #333", borderRadius:6, color: tab==="funds" ? "#000" : "#aaa", cursor:"pointer", fontWeight:600 }}>
+          Funds & ETFs
         </button>
       </div>
 
@@ -156,6 +161,7 @@ export default function App() {
 
       {tab === "screener" && <Screener />}
       {tab === "backtest" && <Backtest />}
+      {tab === "funds"    && <FundSearch />}
 
     </div>
   )

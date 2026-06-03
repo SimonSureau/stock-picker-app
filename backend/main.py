@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import yfinance as yf
 from scorer import calculate_score
+from fund_scorer import calculate_fund_score
 from backtester import run_backtest
 from sentiment import get_combined_sentiment
 
@@ -112,7 +113,33 @@ def screen_stocks(tickers: list[str]):
 def backtest(tickers: list[str]):
     years = [2022, 2023, 2024]
     return run_backtest(tickers, years)
-# Route 7: Get sentiment for a stock
+# Route 7: Score an ETF, index fund, or mutual fund
+@app.get("/fund/{ticker}")
+def get_fund_score(ticker: str):
+    stock = yf.Ticker(ticker.upper())
+    info = stock.info
+    quote_type = info.get("quoteType", "")
+    if not info.get("totalAssets") and not info.get("navPrice") and not info.get("regularMarketPrice"):
+        raise HTTPException(status_code=404, detail="Fund not found")
+    score_data = calculate_fund_score(info)
+    return {
+        "ticker": ticker.upper(),
+        "name": info.get("longName"),
+        "quote_type": quote_type,
+        "fund_family": info.get("fundFamily"),
+        "category": info.get("category"),
+        "price": info.get("navPrice") or info.get("regularMarketPrice"),
+        "total_assets": info.get("totalAssets"),
+        "expense_ratio": info.get("annualReportExpenseRatio") or info.get("expenseRatio"),
+        "three_year_return": info.get("threeYearAverageReturn"),
+        "five_year_return": info.get("fiveYearAverageReturn"),
+        "ytd_return": info.get("ytdReturn"),
+        "dividend_yield": info.get("dividendYield") or info.get("trailingAnnualDividendYield"),
+        "beta": info.get("beta3Year") or info.get("beta"),
+        **score_data
+    }
+
+# Route 8: Get sentiment for a stock
 @app.get("/sentiment/{ticker}")
 def get_sentiment(ticker: str):
     stock = yf.Ticker(ticker.upper())
